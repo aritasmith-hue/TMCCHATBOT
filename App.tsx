@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { generateQuestionOrResponse, generateFinalResponse } from './services/geminiService';
 import { ChatMessage, DisplayMessage, InteractionStage, Question, Answer } from './types';
@@ -61,8 +60,7 @@ const App: React.FC = () => {
         try {
             const chatHistory: ChatMessage[] = [
                 { role: 'user', parts: [{ text: initialQuery }] },
-                // FIX: Use 'as const' to ensure TypeScript infers the literal type 'model' for the role property, preventing a type mismatch with ChatMessage.
-                ...newAnswers.map(a => ({ role: 'model' as const, parts: [{ text: JSON.stringify({question: a.question, answer: a.answer}) }] }))
+                ...newAnswers.map(a => ({ role: 'user' as const, parts: [{ text: `For the question "${a.question}", my answer is "${a.answer}".` }] }))
             ];
             
             const nextStep = await generateQuestionOrResponse(chatHistory);
@@ -169,7 +167,7 @@ const App: React.FC = () => {
     return (
         <div className="bg-gray-100 h-screen flex flex-col font-sans">
             <header className="bg-white shadow-md p-4">
-                <h1 className="text-2xl font-bold text-gray-800 text-center">Saya - AI ဆေးဝါးလက်ထောက်</h1>
+                <h1 className="text-2xl font-bold text-gray-800 text-center">Saya Chit - AI ဆေးဝါးလက်ထောက်</h1>
             </header>
             <main className="flex-1 overflow-y-auto p-4 md:p-6">
                  <div className="max-w-3xl mx-auto">
@@ -178,7 +176,7 @@ const App: React.FC = () => {
                             <div className="mx-auto w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white mb-4">
                                 <BotIcon className="w-8 h-8"/>
                             </div>
-                            <h2 className="text-xl font-bold text-gray-700">မင်္ဂလာပါခင်ဗျာ။ ကျွန်တော်က Saya ပါ။</h2>
+                            <h2 className="text-xl font-bold text-gray-700">မင်္ဂလာပါခင်ဗျာ။ ကျွန်တော်က Saya Chit ပါ။</h2>
                             <p className="text-gray-600 mt-2">သင့်ရဲ့ ရောဂါလက္ခဏာတွေကို ပြောပြပြီး ဆေးဝါးဆိုင်ရာ အကြံဉာဏ်တွေ ရယူနိုင်ပါတယ်။</p>
                         </div>
                     )}

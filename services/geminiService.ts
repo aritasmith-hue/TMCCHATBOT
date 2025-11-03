@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { SAYA_PERSONA_PROMPT, FINAL_RESPONSE_PROMPT } from '../constants';
 import { Answer, ChatMessage, Question } from '../types';
@@ -48,7 +47,7 @@ export async function generateQuestionOrResponse(history: ChatMessage[]): Promis
     if(history.length > 0) {
         // We only add the persona prompt after the first user message
         fullHistory.push({ role: 'user', parts: [{ text: SAYA_PERSONA_PROMPT }]});
-        fullHistory.push({ role: 'model', parts: [{ text: "ဟုတ်ကဲ့၊ ကျွန်တော် Saya ပါ။ ဘေးအန္တရာယ်ကင်းရှင်းရေးအတွက် မေးခွန်းများမေးရန် အသင့်ရှိပါတယ်။" }]});
+        fullHistory.push({ role: 'model', parts: [{ text: "ဟုတ်ကဲ့၊ ကျွန်တော် Saya Chit ပါ။ ဘေးအန္တရာယ်ကင်းရှင်းရေးအတွက် မေးခွန်းများမေးရန် အသင့်ရှိပါတယ်။" }]});
     }
     fullHistory.push(...history);
 
@@ -85,7 +84,7 @@ export async function generateFinalResponse(initialQuery: string, answers: Answe
 
     const history: ChatMessage[] = [
         { role: 'user', parts: [{ text: SAYA_PERSONA_PROMPT }] },
-        { role: 'model', parts: [{ text: "ဟုတ်ကဲ့၊ ကျွန်တော် Saya ပါ။ အချက်အလက်များ ပြည့်စုံပြီဖြစ်သောကြောင့် ဘေးကင်းလုံခြုံသော အကြံပြုချက်ကို ပေးပါမည်။" }] },
+        { role: 'model', parts: [{ text: "ဟုတ်ကဲ့၊ ကျွန်တော် Saya Chit ပါ။ အချက်အလက်များ ပြည့်စုံပြီဖြစ်သောကြောင့် ဘေးကင်းလုံခြုံသော အကြံပြုချက်ကို ပေးပါမည်။" }] },
         { role: 'user', parts: [{ text: prompt }] },
     ];
 

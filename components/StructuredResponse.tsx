@@ -58,12 +58,16 @@ const StructuredResponse: React.FC<StructuredResponseProps> = ({ content }) => {
             return renderTable(body);
         }
         
-        // Simple list rendering for side effects and advice
-        if (body.includes('- ')) {
+        const lines = body.split('\n').filter(line => line.trim().length > 0);
+        // Check if every non-empty line starts with a hyphen, indicating a list.
+        const isList = lines.length > 0 && lines.every(line => line.trim().startsWith('-'));
+
+        if (isList) {
             return (
                 <ul className="list-disc list-inside space-y-1">
-                    {body.split('\n').map((item, index) => (
-                        item.trim().length > 1 ? <li key={index}>{item.replace('-', '').trim()}</li> : null
+                    {lines.map((item, index) => (
+                        // Remove the leading hyphen and trim whitespace
+                        <li key={index}>{item.trim().substring(1).trim()}</li>
                     ))}
                 </ul>
             );
