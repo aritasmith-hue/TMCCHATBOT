@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { generateQuestionOrResponse, generateFinalResponse } from './services/geminiService';
 import { getConversations, saveConversation, clearHistory } from './services/historyService';
 import { ChatMessage, DisplayMessage, InteractionStage, Question, Answer, Conversation } from './types';
-import { BotIcon, SendIcon, UserIcon, HistoryIcon, EditIcon } from './components/Icons';
+import { BotIcon, SendIcon, UserIcon, HistoryIcon, EditIcon, WarningIcon } from './components/Icons';
 import ProcessingIndicator from './components/ProcessingIndicator';
 import StructuredResponse from './components/StructuredResponse';
 import HistoryModal from './components/HistoryModal';
@@ -170,13 +170,23 @@ const App: React.FC = () => {
     };
 
     const loadConversation = (conversation: Conversation) => {
+        // Set state based on the loaded conversation
         setInitialQuery(conversation.initialQuery);
         setAnswers(conversation.answers);
         setDisplayMessages(conversation.displayMessages);
+        setCurrentConversationId(conversation.id);
+        
+        // Set the app's mode to reflect that we are viewing a completed, historical conversation
         setStage(InteractionStage.COMPLETE);
         setViewingHistory(true);
-        setIsHistoryOpen(false);
+
+        // Reset any transient UI states
+        setUserInput('');
         setIsEditingQuery(false);
+        setEditedQueryText('');
+        
+        // Close the history modal
+        setIsHistoryOpen(false);
     };
 
 
@@ -232,7 +242,6 @@ const App: React.FC = () => {
                     </div>
                 );
             case 'model-intro':
-            case 'model-error':
                 return (
                      <div key={index} className="flex justify-start items-start gap-3 my-4">
                         <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white flex-shrink-0">
@@ -243,8 +252,21 @@ const App: React.FC = () => {
                         </div>
                     </div>
                 );
+            case 'model-error':
+                return (
+                     <div key={index} className="flex justify-start items-start gap-3 my-4">
+                        <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white flex-shrink-0">
+                            <WarningIcon className="w-5 h-5" />
+                        </div>
+                        <div className="bg-red-50 text-red-900 p-3 rounded-lg max-w-lg">
+                            <p className="font-bold mb-1">အမှားအယွင်း</p>
+                            <p>{msg.text}</p>
+                        </div>
+                    </div>
+                );
             case 'model-question':
                 const isCurrentQuestion = index === displayMessages.length - 1 && stage === InteractionStage.QUESTIONING;
+                const isButtonActive = isCurrentQuestion && !isEditingQuery && !viewingHistory;
                 return (
                     <div key={index} className="flex justify-start items-start gap-3 my-4">
                          <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white flex-shrink-0">
@@ -258,9 +280,9 @@ const App: React.FC = () => {
                                     <button
                                         key={opt.key}
                                         onClick={() => handleAnswerSelect(msg.question, opt)}
-                                        disabled={!isCurrentQuestion || isEditingQuery}
+                                        disabled={!isButtonActive}
                                         className={`w-full text-left p-3 rounded-md border transition-colors ${
-                                            isCurrentQuestion && !isEditingQuery
+                                            isButtonActive
                                             ? 'bg-white hover:bg-blue-50 border-gray-300 hover:border-blue-400 cursor-pointer' 
                                             : 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
                                         }`}
@@ -328,12 +350,21 @@ const App: React.FC = () => {
                 <main className="flex-1 overflow-y-auto p-4 md:p-6">
                     <div className="max-w-3xl mx-auto">
                         {displayMessages.length === 0 && (
-                            <div className="text-center p-8 bg-white rounded-lg shadow">
+                             <div className="text-center p-8 bg-white rounded-lg shadow">
                                 <div className="mx-auto w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white mb-4">
                                     <BotIcon className="w-8 h-8"/>
                                 </div>
                                 <h2 className="text-xl font-bold text-gray-700">မင်္ဂလာပါခင်ဗျာ။ ကျွန်တော်က Saya Chit ပါ။</h2>
                                 <p className="text-gray-600 mt-2">သင့်ရဲ့ ရောဂါလက္ခဏာတွေကို ပြောပြပြီး ဆေးဝါးဆိုင်ရာ အကြံဉာဏ်တွေ ရယူနိုင်ပါတယ်။</p>
+                                <div className="mt-8 text-left max-w-md mx-auto">
+                                    <p className="text-sm text-gray-500 mb-3 text-center">စတင်ရန် ဥပမာတစ်ခုကို ရွေးပါ သို့မဟုတ် သင့်မေးခွန်းကို ရိုက်ထည့်ပါ။</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <button onClick={() => setUserInput('ခေါင်းကိုက်ပြီး နှာစေးနေတယ်။')} className="text-sm text-gray-700 font-medium text-left p-3 bg-gray-100 hover:bg-blue-50 rounded-lg transition-colors border border-gray-200 hover:border-blue-300">ခေါင်းကိုက်ခြင်း၊ နှာစေးခြင်း</button>
+                                        <button onClick={() => setUserInput('အစာမကြေဖြစ်ပြီး ဗိုက်အောင့်နေတယ်။')} className="text-sm text-gray-700 font-medium text-left p-3 bg-gray-100 hover:bg-blue-50 rounded-lg transition-colors border border-gray-200 hover:border-blue-300">အစာမကြေခြင်း၊ ဗိုက်အောင့်ခြင်း</button>
+                                        <button onClick={() => setUserInput('အရေပြားမှာ ယားပြီး အနီကွက်တွေထွက်နေတယ်။')} className="text-sm text-gray-700 font-medium text-left p-3 bg-gray-100 hover:bg-blue-50 rounded-lg transition-colors border border-gray-200 hover:border-blue-300">အရေပြား ယားယံခြင်း</button>
+                                        <button onClick={() => setUserInput('ချောင်းခြောက်ဆိုးနေတာ တစ်ပတ်ရှိပြီ။')} className="text-sm text-gray-700 font-medium text-left p-3 bg-gray-100 hover:bg-blue-50 rounded-lg transition-colors border border-gray-200 hover:border-blue-300">နာတာရှည် ချောင်းဆိုးခြင်း</button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                         {displayMessages.map(renderMessage)}
@@ -354,7 +385,7 @@ const App: React.FC = () => {
                                     placeholder="ဥပမာ - ခေါင်းကိုက်နေလို့ ဘာဆေးသောက်ရမလဲ။"
                                     className="flex-1 p-3 border rounded-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                 />
-                                <button type="submit" className="bg-blue-500 text-white rounded-full p-3 hover:bg-blue-600 transition-colors disabled:bg-gray-400">
+                                <button type="submit" disabled={!userInput.trim()} className="bg-blue-500 text-white rounded-full p-3 hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
                                     <SendIcon />
                                 </button>
                             </form>
@@ -369,6 +400,9 @@ const App: React.FC = () => {
                                 </button>
                             </div>
                         )}
+                        <p className="text-xs text-gray-500 text-center mt-3 px-4">
+                           Saya Chit သည် AI လက်ထောက်သာဖြစ်ပြီး ဆေးဘက်ဆိုင်ရာ ကျွမ်းကျင်သူမဟုတ်ပါ။ အရေးပေါ်အခြေအနေများအတွက် ဆရာဝန်နှင့် ချက်ချင်းတိုင်ပင်ပါ။
+                        </p>
                     </div>
                 </footer>
             </div>

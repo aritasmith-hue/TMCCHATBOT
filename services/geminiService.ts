@@ -43,24 +43,36 @@ const questionResponseSchema = {
 function handleApiError(error: unknown, context: string): never {
     console.error(`Error during ${context}:`, error);
 
-    let userMessage = 'တောင်းပန်ပါတယ်၊ အမှားအယွင်းတစ်ခုဖြစ်သွားပါတယ်။ ခဏနေပြီးမှ ပြန်ကြိုးစားပေးပါ။'; // Default message
+    // Default user-friendly error message in Burmese
+    let userMessage = 'တောင်းပန်ပါသည်၊ မမျှော်လင့်ထားသော အမှားအယွင်းတစ်ခု ဖြစ်ပေါ်သွားပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပေးပါ။';
 
     if (error instanceof Error) {
         const lowerCaseMessage = error.message.toLowerCase();
         
+        // Check for specific error types based on keywords in the error message
         if (lowerCaseMessage.includes('api key not valid')) {
-            userMessage = 'API Key မမှန်ကန်ပါ။ သင်၏ API Key ကို ပြန်လည်စစ်ဆေးပေးပါ။';
+            // Invalid API Key
+            userMessage = 'API Key မမှန်ကန်ပါ။ ကျေးဇူးပြု၍ API Key ကို ပြန်လည်စစ်ဆေးပြီး နောက်တစ်ကြိမ် ထပ်မံကြိုးစားပါ။';
         } else if (lowerCaseMessage.includes('network') || lowerCaseMessage.includes('failed to fetch')) {
-            userMessage = 'အင်တာနက်ချိတ်ဆက်မှု မကောင်းပါ။ ကျေးဇူးပြု၍ ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်မံကြိုးစားပါ။';
+            // Network connectivity issues
+            userMessage = 'အင်တာနက်ချိတ်ဆက်မှု ပြတ်တောက်နေပါသည်။ ကျေးဇူးပြု၍ သင်၏ ကွန်ရက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်မံကြိုးစားပါ။';
         } else if (lowerCaseMessage.includes('500') || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('server error')) {
-            userMessage = 'AI ဆာဗာတွင် ယာယီပြဿနာတစ်ခု ရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားကြည့်ပါ။';
+            // Server-side errors from the API
+            userMessage = 'AI ဆာဗာတွင် ယာယီပြဿနာတစ်ခု ဖြစ်ပေါ်နေပါသည်။ ခေတ္တစောင့်ဆိုင်းပြီး နောက်တစ်ကြိမ် ကြိုးစားပေးပါ။';
         } else if (lowerCaseMessage.includes('resource has been exhausted') || lowerCaseMessage.includes('rate limit')) {
-             userMessage = 'တောင်းဆိုမှုများ အလွန်များနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားကြည့်ပါ။';
+            // Rate limiting or quota exceeded
+            userMessage = 'တောင်းဆိုမှုများ အလွန်များပြားနေပါသဖြင့် ခေတ္တရပ်နားထားပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပေးပါ။';
         } else if (lowerCaseMessage.includes('candidate') && lowerCaseMessage.includes('blocked')) {
-            userMessage = 'မသင့်လျော်သော အကြောင်းအရာကြောင့် တောင်းဆိုမှုကို ပယ်ချခဲ့ပါသည်။ ကျေးဇူးပြု၍ သင်၏ မေးခွန်းကို ပြန်လည်စစ်ဆေးပါ။';
+            // Content blocked due to safety policies
+            userMessage = 'သင်၏တောင်းဆိုမှုတွင် မူဝါဒနှင့်မကိုက်ညီသော အကြောင်းအရာ ပါဝင်နေသောကြောင့် တောင်းဆိုမှုကို ပယ်ချလိုက်ပါသည်။ ကျေးဇူးပြု၍ သင်၏ မေးခွန်းကို ပြန်လည်စစ်ဆေးပါ။';
+        } else {
+            // If none of the specific API errors match, but it's still an Error object,
+            // it might be one of our custom-thrown errors. Use its message directly.
+            userMessage = error.message;
         }
     }
     
+    // Throw a new error with the user-friendly message, which will be caught and displayed by the UI
     throw new Error(userMessage);
 }
 
@@ -121,7 +133,14 @@ export async function generateFinalResponse(initialQuery: string, answers: Answe
                 temperature: 0.3,
             }
         });
-        return response.text;
+
+        const responseText = response.text;
+        if (!responseText) {
+            console.error("API returned an empty response for final generation. This may be due to content filtering.", response);
+            throw new Error('AI မှ အကြောင်းပြန်ကြားချက် မရရှိပါ။ သင်၏ မေးမြန်းမှုတွင် ဘေးကင်းရေးမူဝါဒနှင့် မကိုက်ညီသော အကြောင်းအရာများ ပါဝင်နေနိုင်သောကြောင့် ဖြစ်ပါသည်။');
+        }
+
+        return responseText;
     } catch (error) {
         handleApiError(error, "final response generation");
     }

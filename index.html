@@ -13,6 +13,23 @@
       body {
         font-family: 'Padauk', sans-serif;
       }
+      @keyframes bounce-dot-vertical {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-6px);
+        }
+      }
+      .animate-bounce-dot-1 {
+        animation: bounce-dot-vertical 1.2s infinite ease-in-out;
+      }
+      .animate-bounce-dot-2 {
+        animation: bounce-dot-vertical 1.2s infinite ease-in-out -0.2s;
+      }
+      .animate-bounce-dot-3 {
+        animation: bounce-dot-vertical 1.2s infinite ease-in-out -0.4s;
+      }
     </style>
 <script type="importmap">
 {
@@ -20,7 +37,8 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "dompurify": "https://aistudiocdn.com/dompurify@^3.1.6"
   }
 }
 </script>
