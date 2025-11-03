@@ -40,6 +40,30 @@ const questionResponseSchema = {
     }
 };
 
+function handleApiError(error: unknown, context: string): never {
+    console.error(`Error during ${context}:`, error);
+
+    let userMessage = 'တောင်းပန်ပါတယ်၊ အမှားအယွင်းတစ်ခုဖြစ်သွားပါတယ်။ ခဏနေပြီးမှ ပြန်ကြိုးစားပေးပါ။'; // Default message
+
+    if (error instanceof Error) {
+        const lowerCaseMessage = error.message.toLowerCase();
+        
+        if (lowerCaseMessage.includes('api key not valid')) {
+            userMessage = 'API Key မမှန်ကန်ပါ။ သင်၏ API Key ကို ပြန်လည်စစ်ဆေးပေးပါ။';
+        } else if (lowerCaseMessage.includes('network') || lowerCaseMessage.includes('failed to fetch')) {
+            userMessage = 'အင်တာနက်ချိတ်ဆက်မှု မကောင်းပါ။ ကျေးဇူးပြု၍ ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်မံကြိုးစားပါ။';
+        } else if (lowerCaseMessage.includes('500') || lowerCaseMessage.includes('503') || lowerCaseMessage.includes('server error')) {
+            userMessage = 'AI ဆာဗာတွင် ယာယီပြဿနာတစ်ခု ရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားကြည့်ပါ။';
+        } else if (lowerCaseMessage.includes('resource has been exhausted') || lowerCaseMessage.includes('rate limit')) {
+             userMessage = 'တောင်းဆိုမှုများ အလွန်များနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားကြည့်ပါ။';
+        } else if (lowerCaseMessage.includes('candidate') && lowerCaseMessage.includes('blocked')) {
+            userMessage = 'မသင့်လျော်သော အကြောင်းအရာကြောင့် တောင်းဆိုမှုကို ပယ်ချခဲ့ပါသည်။ ကျေးဇူးပြု၍ သင်၏ မေးခွန်းကို ပြန်လည်စစ်ဆေးပါ။';
+        }
+    }
+    
+    throw new Error(userMessage);
+}
+
 export async function generateQuestionOrResponse(history: ChatMessage[]): Promise<{ question: Question } | { action: 'generate_final_response' } | null> {
     const model = 'gemini-2.5-flash';
 
@@ -64,13 +88,14 @@ export async function generateQuestionOrResponse(history: ChatMessage[]): Promis
         
         const jsonText = response.text.trim();
         if (jsonText) {
-            const parsedJson = JSON.parse(jsonText);
-            return parsedJson;
+            // A simple guard against non-JSON responses which can happen on error.
+            if (jsonText.startsWith('{') || jsonText.startsWith('[')) {
+                return JSON.parse(jsonText);
+            }
         }
         return null;
     } catch (error) {
-        console.error("Error generating question:", error);
-        throw error;
+        handleApiError(error, "question generation");
     }
 }
 
@@ -98,7 +123,6 @@ export async function generateFinalResponse(initialQuery: string, answers: Answe
         });
         return response.text;
     } catch (error) {
-        console.error("Error generating final response:", error);
-        throw error;
+        handleApiError(error, "final response generation");
     }
 }
